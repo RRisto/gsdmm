@@ -1,11 +1,7 @@
 from numpy.random import multinomial
-from numpy import log, exp
 import numpy as np
-import pandas as pd
-import gensim
 from gensim.corpora.dictionary import Dictionary
 from gsdmm import MovieGroupProcessArray, MovieGroupProcess
-from sklearn.datasets import fetch_20newsgroups
 
 np.random.seed(1)
 

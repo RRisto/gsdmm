@@ -2,7 +2,6 @@ from numpy.random import multinomial
 from numpy import log, exp
 from numpy import argmax
 import numpy as np
-import json
 
 class MovieGroupProcess:
     def __init__(self, K=8, alpha=0.1, beta=0.1, n_iters=30):

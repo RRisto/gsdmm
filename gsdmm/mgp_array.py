@@ -172,12 +172,7 @@ class MovieGroupProcess:
 
         lD1 = log(D - 1 + K * alpha)
         doc_size = len(doc)
-        # idx, cnt = zip(*doc)
-        #
-        # lN1 = log(m_z + alpha)
-        # lN2 = np.log(n_z_w[:, idx] + beta).sum(axis=1)
-        # lD2 = np.log(n_z.reshape(-1, 1) + V * beta + np.array(range(1, doc_size + 1)) - 1).sum(axis=1)
-        # p = exp(lN1 - lD1 + lN2 - lD2)
+
         for label in range(K):
             lN1 = log(m_z[label] + alpha)
             idx, cnt = zip(*doc)
