@@ -1,7 +1,5 @@
 import numpy as np
-from numpy.random import multinomial
-from numpy import log, exp
-from numpy import argmax
+from .dictionary import Dictionary
 
 
 class MovieGroupProcess:
@@ -74,9 +72,14 @@ class MovieGroupProcess:
         :return: int
             index of randomly selected output
         '''
-        return [i for i, entry in enumerate(multinomial(1, p)) if entry != 0][0]
+        return [i for i, entry in enumerate(np.random.multinomial(1, p)) if entry != 0][0]
 
-    def fit(self, docs, vocab_size):
+    def create_dictionary(self, docs_toks):
+        self.dictionary = Dictionary(docs_toks)
+        self.corpus = [self.dictionary.doc2bow(text) for text in docs_toks]
+        self.vocab_size = len(self.dictionary)
+
+    def fit(self, docs):
         '''
         Cluster the input documents
         :param docs: list of list
@@ -85,21 +88,23 @@ class MovieGroupProcess:
         :return: list of length len(doc)
             cluster label for each document
         '''
-        alpha, beta, K, n_iters, V = self.alpha, self.beta, self.K, self.n_iters, vocab_size
 
-        D = len(docs)
+        self.create_dictionary(docs)
+
+        alpha, beta, K, n_iters, V = self.alpha, self.beta, self.K, self.n_iters, self.vocab_size
+
+        D = len(self.corpus)
         self.number_docs = D
-        self.vocab_size = vocab_size
 
-        self.cluster_word_distribution = np.zeros((K, vocab_size), dtype=int)
+        self.cluster_word_distribution = np.zeros((K, self.vocab_size), dtype=int)
 
         # unpack to easy var names
         m_z, n_z, n_z_w = self.cluster_doc_count, self.cluster_word_count, self.cluster_word_distribution
         cluster_count = K
-        d_z = [None for i in range(len(docs))]
+        d_z = [None for i in range(len(self.corpus))]
 
         # initialize the clusters
-        for i, doc in enumerate(docs):
+        for i, doc in enumerate(self.corpus):
             # choose a random  initial cluster for the doc
             z = self._sample([1.0 / K for _ in range(K)])
             d_z[i] = z
@@ -112,7 +117,7 @@ class MovieGroupProcess:
         for _iter in range(n_iters):
             total_transfers = 0
 
-            for i, doc in enumerate(docs):
+            for i, doc in enumerate(self.corpus):
 
                 # remove the doc from it's current cluster
                 z_old = d_z[i]
@@ -170,15 +175,15 @@ class MovieGroupProcess:
         #  lN2 = log(product(n_z_w[w] + beta)) = sum(log(n_z_w[w] + beta))
         #  lD2 = log(product(n_z[d] + V*beta + i -1)) = sum(log(n_z[d] + V*beta + i -1))
 
-        lD1 = log(D - 1 + K * alpha)
+        lD1 = np.log(D - 1 + K * alpha)
         doc_size = len(doc)
 
         for label in range(K):
-            lN1 = log(m_z[label] + alpha)
+            lN1 = np.log(m_z[label] + alpha)
             idx, cnt = zip(*doc)
             lN2 = np.log(n_z_w[label, idx] + beta).sum()
             lD2 = np.log(n_z[label] + V * beta + np.array(range(1, doc_size + 1)) - 1).sum()
-            p[label] = exp(lN1 - lD1 + lN2 - lD2)
+            p[label] = np.exp(lN1 - lD1 + lN2 - lD2)
 
         # normalize the probability vector
         pnorm = sum(p)
@@ -191,12 +196,14 @@ class MovieGroupProcess:
         :param doc: list[str]: The doc token stream
         :return:
         '''
-        p = self.score(doc)
-        return argmax(p), max(p)
 
-    def top_words(self,  dictionary, n_toks=5, join_tok=' '):
+        doc_corpus = self.dictionary.doc2bow(doc)
+        p = self.score(doc_corpus)
+        return np.argmax(p), max(p)
+
+    def top_words(self, n_toks=5, join_tok=' '):
         doc_count = np.array(self.cluster_doc_count)
-        n_topics_with_docs = sum(doc_count > 0)  # dont need topics where really no docs
+        n_topics_with_docs = sum(doc_count > 0)  # dont need topics where no docs
         top_index = doc_count.argsort()[-n_topics_with_docs:][::-1]
         topic_words = {}
         top_cluster_tok_idx = np.argsort(-self.cluster_word_distribution)[:, :n_toks]
@@ -204,6 +211,6 @@ class MovieGroupProcess:
         for cluster in top_index:
             words_ = ''
             for idx in top_cluster_tok_idx[cluster]:
-                words_ = f'{words_}{join_tok}{dictionary[idx]}'
+                words_ = f'{words_}{join_tok}{self.dictionary[idx]}'
             topic_words[cluster] = words_
         return topic_words
