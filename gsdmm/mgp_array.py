@@ -177,13 +177,12 @@ class MovieGroupProcess:
 
         lD1 = np.log(D - 1 + K * alpha)
         doc_size = len(doc)
+        idx, cnt = zip(*doc)
 
-        for label in range(K):
-            lN1 = np.log(m_z[label] + alpha)
-            idx, cnt = zip(*doc)
-            lN2 = np.log(n_z_w[label, idx] + beta).sum()
-            lD2 = np.log(n_z[label] + V * beta + np.array(range(1, doc_size + 1)) - 1).sum()
-            p[label] = np.exp(lN1 - lD1 + lN2 - lD2)
+        lN1 = np.log(m_z + alpha)
+        lN2 = np.log(n_z_w[:, idx] + beta).sum(axis=1)
+        lD2 = np.log(n_z.reshape(-1, 1) + V * beta + np.array(range(1, doc_size + 1)) - 1).sum(axis=1)
+        p = np.exp(lN1 - lD1 + lN2 - lD2)
 
         # normalize the probability vector
         pnorm = sum(p)
