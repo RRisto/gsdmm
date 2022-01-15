@@ -1,10 +1,12 @@
 # Updates
 
 Speeded things up by using arrays. To test faster version, see example in example.ipynb
+Original repo is [here](https://github.com/rwalk/gsdmm), I just forked it and did some minor changes.
+
+
+Original readme:
 
 # GSDMM: Short text clustering
-
-Original repo is [here](https://github.com/rwalk/gsdmm)
 
 This project implements the Gibbs sampling algorithm for a Dirichlet Mixture Model of [Yin and Wang 2014](https://pdfs.semanticscholar.org/058a/d0815ce350f0e7538e00868c762be78fe5ef.pdf) for the 
 clustering of short text documents. 
