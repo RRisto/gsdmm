@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import numpy as np
 from .dictionary import Dictionary
 
@@ -42,7 +45,7 @@ class MovieGroupProcess:
         self.cluster_word_distribution = [{} for i in range(K)]
 
     @staticmethod
-    def from_data(K, alpha, beta, D, vocab_size, cluster_doc_count, cluster_word_count, cluster_word_distribution):
+    def from_data(K, alpha, beta, dictionary, cluster_doc_count, cluster_word_count, cluster_word_distribution):
         '''
         Reconstitute a MovieGroupProcess from previously fit data
         :param K:
@@ -56,11 +59,55 @@ class MovieGroupProcess:
         :return:
         '''
         mgp = MovieGroupProcess(K, alpha, beta, n_iters=30)
-        mgp.number_docs = D
-        mgp.vocab_size = vocab_size
+        mgp.number_docs = cluster_doc_count.sum()
+        mgp.dictionary = dictionary
+        mgp.vocab_size = len(dictionary)
         mgp.cluster_doc_count = cluster_doc_count
         mgp.cluster_word_count = cluster_word_count
         mgp.cluster_word_distribution = cluster_word_distribution
+        return mgp
+
+    def save(self, folder_path):
+        '''
+       Saves MovieGroupProcess model and dictionary
+        :param folder_path:
+        :return:
+        '''
+        if os.path.isdir(folder_path):
+            print(f'Folder {folder_path} already exists, not overwriting it. Exiting!')
+
+        os.mkdir(folder_path)
+
+        with open(Path(folder_path, 'gsdmm.npy'), 'wb') as f:
+            np.save(f, self.K)
+            np.save(f, self.alpha)
+            np.save(f, self.beta)
+            np.save(f, self.cluster_doc_count)
+            np.save(f, self.cluster_word_count)
+            np.save(f, self.cluster_word_distribution)
+
+        self.dictionary.save_as_text(Path(folder_path, 'dictionary.npy'))
+
+    @staticmethod
+    def load(folder_path):
+        '''
+          Loads MovieGroupProcess model and dictionary
+           :param folder_path:
+           :return:
+           MovieGroupProcess class instance with correct weights
+           '''
+
+        with open(Path(folder_path, 'gsdmm.npy'), 'rb') as f:
+            K = np.load(f)
+            alpha = np.load(f)
+            beta = np.load(f)
+            cluster_doc_count = np.load(f)
+            cluster_word_count = np.load(f)
+            cluster_word_distribution = np.load(f)
+
+        dictionary = Dictionary.load_from_text(Path(folder_path, 'dictionary.npy'))
+        mgp = MovieGroupProcess.from_data(K, alpha, beta, dictionary, cluster_doc_count, cluster_word_count,
+                                          cluster_word_distribution)
         return mgp
 
     @staticmethod

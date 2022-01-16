@@ -118,3 +118,26 @@ def any2utf8(text, errors='strict', encoding='utf8'):
 
 
 to_utf8 = any2utf8
+
+
+def any2unicode(text, encoding='utf8', errors='strict'):
+    """Convert `text` (bytestring in given encoding or unicode) to unicode.
+    Parameters
+    ----------
+    text : str
+        Input text.
+    errors : str, optional
+        Error handling behaviour if `text` is a bytestring.
+    encoding : str, optional
+        Encoding of `text` if it is a bytestring.
+    Returns
+    -------
+    str
+        Unicode version of `text`.
+    """
+    if isinstance(text, str):
+        return text
+    return str(text, encoding, errors=errors)
+
+
+to_unicode = any2unicode
